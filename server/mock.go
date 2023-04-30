@@ -13,8 +13,8 @@ import (
 // ContextDialer номеронабиратель для создания соединений.
 type ContextDialer = func(context.Context, string) (net.Conn, error)
 
-// NewMockAPI мокает api server.
-func NewMockAPI(t *testing.T, services ...Service) ContextDialer {
+// NewMockServer mock grpc server.
+func NewMockServer(t *testing.T, services ...Service) ContextDialer {
 	t.Helper()
 
 	const bufSize = 1024 * 1024

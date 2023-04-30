@@ -4,7 +4,6 @@ import (
 	"context"
 	"net"
 
-	grpcLogging "github.com/grpc-ecosystem/go-grpc-middleware/logging"
 	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	grpcCTXTags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	grpcPrometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
@@ -14,25 +13,17 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-type Logger interface {
-	ReplaceGRPCLogger()
-	UnaryServerInterceptor() grpc.UnaryServerInterceptor
-	PayloadUnaryServerInterceptor(grpcLogging.ServerPayloadLoggingDecider) grpc.UnaryServerInterceptor
-	Info(...any)
-	Debugf(string, ...any)
-}
-
-// API grpc API.
-type API struct {
+// Server grpc сервер.
+type Server struct {
 	options *Options
 	logger  Logger
 	server  *grpc.Server
 	listen  net.Listener
 }
 
-// NewAPI возвращает обработчик grpc запросов.
-func NewAPI(opt *Options, logger Logger, services ...Service) (*API, error) {
-	if opt == nil || logger == nil {
+// NewServer создает и возвращает новый grpc сервер.
+func NewServer(opt *Options, logger Logger, services ...Service) (*Server, error) {
+	if opt == nil {
 		return nil, errors.New("invalid arguments")
 	}
 
@@ -93,26 +84,26 @@ func NewAPI(opt *Options, logger Logger, services ...Service) (*API, error) {
 	// обнуляем метрики для всех сервисов
 	grpcPrometheus.Register(server)
 
-	a := API{
+	s := Server{
 		options: opt,
 		logger:  logger,
 		server:  server,
 		listen:  listen,
 	}
 
-	return &a, nil
+	return &s, nil
 }
 
 // Serve запускает сервер.
-func (a *API) Serve() error {
-	a.logger.Info("Running GRPC Server")
-	return a.server.Serve(a.listen)
+func (s *Server) Serve() error {
+	s.logger.Info("Running GRPC Server")
+	return s.server.Serve(s.listen)
 }
 
 // Close закрывает сервер.
-func (a *API) Close() error {
-	a.logger.Info("Shutting down GRPC Server")
-	a.server.GracefulStop() // сам закрывает net.Listener
+func (s *Server) Close() error {
+	s.logger.Info("Shutting down GRPC Server")
+	s.server.GracefulStop() // сам закрывает net.Listener
 	return nil
 }
 
